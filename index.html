@@ -276,7 +276,7 @@
 
         besaranSelect.addEventListener('change', (e) => {
             infoText.innerHTML = descriptions[e.target.value];
-            if (e.target.value === 'tali_putus' && !isReleased) {
+            if (e.target.value === 'tali_putus') {
                 isReleased = true;
                 releasedPos.x = centerX + R * Math.cos(theta);
                 releasedPos.y = centerY + R * Math.sin(theta);
@@ -285,7 +285,7 @@
                 releasedVel.vx = -vMag * Math.sin(theta);
                 releasedVel.vy = vMag * Math.cos(theta);
                 currentDist = 0;
-            } else if (e.target.value !== 'tali_putus') {
+            } else {
                 isReleased = false;
                 currentDist = 0;
             }
@@ -305,16 +305,20 @@
             }
         }
 
+        // PERUBAHAN UTAMA: Slider hanya mengubah nilai variabel R dan omega secara langsung 
+        // tanpa memanggil resetSim() agar posisi animasi tidak ter-reset/melompat.
         rangeR.addEventListener('input', (e) => {
             R = parseInt(e.target.value);
             rVal.innerText = R + " m";
-            resetSim();
+            if (besaranSelect.value === 'tali_putus' && !isReleased) {
+                releasedPos.x = centerX + R * Math.cos(theta);
+                releasedPos.y = centerY + R * Math.sin(theta);
+            }
         });
 
         rangeW.addEventListener('input', (e) => {
             omega = parseFloat(e.target.value);
             wVal.innerText = omega.toFixed(1) + " rad/s";
-            resetSim();
         });
 
         btnToggle.addEventListener('click', () => {
