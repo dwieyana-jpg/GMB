@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulasi Interaktif Gerak Melingkar & Efek Tali Putus (GMB)</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 600px;
+            width: 100%;
+            align-items: center;
+        }
+
+        @media (min-width: 850px) {
+            .container {
+                flex-direction: row;
+                max-width: 1100px;
+                justify-content: center;
+                align-items: flex-start;
+            }
+            header h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        .canvas-wrapper {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        canvas {
+            background: #090d16;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            touch-action: none;
+        }
+
+        .controls {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+
+        input[type="range"] {
+            padding: 6px 0;
+            cursor: pointer;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .slider-val {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--accent);
+            float: right;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #btnToggle {
+            background: var(--primary);
+            color: white;
+        }
+        #btnToggle:hover, #btnToggle:active {
+            background: var(--primary-hover);
+        }
+
+        #btnReset {
+            background: #334155;
+            color: white;
+        }
+        #btnReset:hover, #btnReset:active {
+            background: #475569;
+        }
+
+        .info-panel {
+            background: rgba(15, 23, 42, 0.6);
+            border-left: 4px solid var(--accent);
+            padding: 10px 12px;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Simulasi Fisika: GMB & Efek Tali Putus</h1>
+        <p>Pak Dwi Physics Lab • SMAN Tawangmangu & SMAN 1 Karanganyar</p>
+    </header>
+
+    <div class="container">
+        <!-- Canvas Area -->
+        <div class="canvas-wrapper">
+            <canvas id="simCanvas" width="500" height="500"></canvas>
+        </div>
+
+        <!-- Controls Area -->
+        <div class="controls">
+            <div class="control-group">
+                <label for="besaranSelect">Pilih Fokus Visualisasi:</label>
+                <select id="besaranSelect">
+                    <option value="all">Semua Parameter (Standar)</option>
+                    <option value="sudut">Sapuan Sudut Tempuh (θ)</option>
+                    <option value="kecepatan_linear">Kecepatan Linear (v)</option>
+                    <option value="kecepatan_sudut">Kecepatan Sudut (ω)</option>
+                    <option value="periode">Periode (T) & Frekuensi (f)</option>
+                    <option value="percepatan">Percepatan Sentripetal (as)</option>
+                    <option value="tali_putus">Tali Diputus (Gerak Lurus Beraturan)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Jari-jari Lintasan (R): <span id="rVal" class="slider-val">120 m</span></label>
+                <input type="range" id="rangeR" min="60" max="180" value="120">
+            </div>
+
+            <div class="control-group">
+                <label>Kecepatan Sudut (ω): <span id="wVal" class="slider-val">1.5 rad/s</span></label>
+                <input type="range" id="rangeW" min="0.5" max="3.0" step="0.1" value="1.5">
+            </div>
+
+            <div class="btn-group">
+                <button id="btnToggle">Pause / Mulai</button>
+                <button id="btnReset">Reset Simulasi</button>
+            </div>
+
+            <div class="info-panel" id="infoText">
+                Silakan pilih besaran atau pilih "Tali Diputus" untuk melihat demonstrasi Hukum Inersia Newton.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const besaranSelect = document.getElementById('besaranSelect');
+        const rangeR = document.getElementById('rangeR');
+        const rangeW = document.getElementById('rangeW');
+        const rVal = document.getElementById('rVal');
+        const wVal = document.getElementById('wVal');
+        const btnToggle = document.getElementById('btnToggle');
+        const btnReset = document.getElementById('btnReset');
+        const infoText = document.getElementById('infoText');
+
+        let R = parseInt(rangeR.value); 
+        let omega = parseFloat(rangeW.value); 
+        let theta = 0; 
+        let isRunning = true;
+        let lastTime = 0;
+
+        let isReleased = false;
+        let releasedPos = { x: 0, y: 0 };
+        let releasedVel = { vx: 0, vy: 0 };
+        let currentDist = 0;
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        const descriptions = {
+            all: "Menampilkan keseluruhan sistem GMB standar: lintasan, posisi benda, vektor kecepatan linear, dan percepatan sentripetal.",
+            sudut: "Visualisasi <b>Sapuan Sudut (θ)</b>: Menunjukkan besar sudut yang disapu garis hubung pusat ke benda (θ = ω · t).",
+            kecepatan_linear: "Visualisasi <b>Kecepatan Linear (v)</b>: Arah vektor kecepatan selalu menyinggung lintasan lingkaran (tegak lurus jari-jari).",
+            kecepatan_sudut: "Visualisasi <b>Kecepatan Sudut (ω)</b>: Menyatakan besar perubahan sudut tempuh tiap satuan waktu (rad/s).",
+            periode: "Visualisasi <b>Periode (T) & Frekuensi (f)</b>: Waktu untuk 1 putaran penuh (T = 2π / ω) dan jumlah putaran tiap detik (f = 1/T).",
+            percepatan: "Visualisasi <b>Percepatan Sentripetal (as)</b>: Percepatan menuju pusat yang mengubah arah kecepatan benda (as = ω² · R).",
+            tali_putus: "Visualisasi <b>Tali Diputus</b>: Saat opsi ini dipilih, benda langsung lepas pada posisi aktualnya saat itu dan meluncur lurus mengikuti arah kecepatan tangensial."
+        };
+
+        besaranSelect.addEventListener('change', (e) => {
+            infoText.innerHTML = descriptions[e.target.value];
+            if (e.target.value === 'tali_putus' && !isReleased) {
+                isReleased = true;
+                releasedPos.x = centerX + R * Math.cos(theta);
+                releasedPos.y = centerY + R * Math.sin(theta);
+                
+                const vMag = omega * (R / 50) * 40; 
+                releasedVel.vx = -vMag * Math.sin(theta);
+                releasedVel.vy = vMag * Math.cos(theta);
+                currentDist = 0;
+            } else if (e.target.value !== 'tali_putus') {
+                isReleased = false;
+                currentDist = 0;
+            }
+        });
+        infoText.innerHTML = descriptions['all'];
+
+        function resetSim() {
+            theta = 0;
+            isReleased = (besaranSelect.value === 'tali_putus');
+            currentDist = 0;
+            if (isReleased) {
+                releasedPos.x = centerX + R * Math.cos(theta);
+                releasedPos.y = centerY + R * Math.sin(theta);
+                const vMag = omega * (R / 50) * 40; 
+                releasedVel.vx = -vMag * Math.sin(theta);
+                releasedVel.vy = vMag * Math.cos(theta);
+            }
+        }
+
+        rangeR.addEventListener('input', (e) => {
+            R = parseInt(e.target.value);
+            rVal.innerText = R + " m";
+            resetSim();
+        });
+
+        rangeW.addEventListener('input', (e) => {
+            omega = parseFloat(e.target.value);
+            wVal.innerText = omega.toFixed(1) + " rad/s";
+            resetSim();
+        });
+
+        btnToggle.addEventListener('click', () => {
+            isRunning = !isRunning;
+        });
+
+        btnReset.addEventListener('click', () => {
+            resetSim();
+            if(!isRunning) {
+                isRunning = true;
+                requestAnimationFrame(update);
+            }
+        });
+
+        function drawArrow(fromX, fromY, toX, toY, color, width = 2) {
+            const headlen = 10;
+            const angle = Math.atan2(toY - fromY, toX - fromX);
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = width;
+            
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.lineTo(toX, toY);
+            ctx.fill();
+        }
+
+        function update(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+
+            const selectedMode = besaranSelect.value;
+
+            if (isRunning) {
+                if (selectedMode === 'tali_putus') {
+                    if (isReleased) {
+                        currentDist += 120 * dt; 
+                    }
+                } else {
+                    theta += omega * dt;
+                    if (theta > 2 * Math.PI) {
+                        theta %= (2 * Math.PI);
+                    }
+                }
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, centerY); ctx.lineTo(canvas.width, centerY);
+            ctx.moveTo(centerX, 0); ctx.lineTo(centerX, canvas.height);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, R, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.setLineDash([]); 
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 4, 0, 2 * Math.PI);
+            ctx.fill();
+
+            if (selectedMode === 'tali_putus') {
+                if (!isReleased) {
+                    isReleased = true;
+                    releasedPos.x = centerX + R * Math.cos(theta);
+                    releasedPos.y = centerY + R * Math.sin(theta);
+                    const vMag = omega * (R / 50) * 40; 
+                    releasedVel.vx = -vMag * Math.sin(theta);
+                    releasedVel.vy = vMag * Math.cos(theta);
+                    currentDist = 0;
+                }
+
+                const originX = releasedPos.x;
+                const originY = releasedPos.y;
+
+                const normV = Math.hypot(releasedVel.vx, releasedVel.vy);
+                const dirX = releasedVel.vx / normV;
+                const dirY = releasedVel.vy / normV;
+
+                const currX = originX + dirX * currentDist;
+                const currY = originY + dirY * currentDist;
+
+                ctx.strokeStyle = '#22c55e';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 6]);
+                ctx.beginPath();
+                ctx.moveTo(originX, originY);
+                ctx.lineTo(currX, currY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                drawArrow(currX, currY, currX + dirX * 50, currY + dirY * 50, '#22c55e', 2.5);
+
+                ctx.fillStyle = '#22c55e';
+                ctx.beginPath();
+                ctx.arc(currX, currY, 10, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.fillStyle = '#22c55e';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillText("Gerak Lurus (Inersia v)", currX + 15, currY - 5);
+
+            } else {
+                const x = centerX + R * Math.cos(theta);
+                const y = centerY + R * Math.sin(theta);
+
+                if (selectedMode === 'all' || selectedMode === 'sudut') {
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.arc(centerX, centerY, 40, 0, theta, false);
+                    ctx.lineTo(centerX, centerY);
+                    ctx.fill();
+
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, 40, 0, theta, false);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.font = '14px sans-serif';
+                    ctx.fillText(`θ = ${(theta * (180/Math.PI)).toFixed(1)}°`, centerX + 45, centerY - 15);
+                }
+
+                ctx.strokeStyle = '#64748b';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+
+                if (selectedMode === 'all' || selectedMode === 'kecepatan_linear') {
+                    const vLen = 60;
+                    const vx = x - vLen * Math.sin(theta);
+                    const vy = y + vLen * Math.cos(theta);
+                    drawArrow(x, y, vx, vy, '#22c55e', 2.5);
+                    
+                    ctx.fillStyle = '#22c55e';
+                    ctx.font = 'bold 13px sans-serif';
+                    ctx.fillText("v (Kecepatan Tangensial)", vx + 5, vy + 5);
+                }
+
+                if (selectedMode === 'all' || selectedMode === 'percepatan') {
+                    const aLen = 50;
+                    const ax = x - aLen * Math.cos(theta);
+                    const ay = y - aLen * Math.sin(theta);
+                    drawArrow(x, y, ax, ay, '#f43f5e', 2.5);
+
+                    ctx.fillStyle = '#f43f5e';
+                    ctx.font = 'bold 13px sans-serif';
+                    ctx.fillText("as (Sentripetal)", ax - 40, ay - 10);
+                }
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+            	ctx.arc(x, y, 10, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = '13px monospace';
+            const T_periode = (2 * Math.PI / omega).toFixed(2);
+            const freq = (omega / (2 * Math.PI)).toFixed(2);
+            
+            ctx.fillText(`Kecepatan Sudut (ω) : ${omega.toFixed(1)} rad/s`, 15, 25);
+            ctx.fillText(`Periode (T)       : ${T_periode} s`, 15, 45);
+            ctx.fillText(`Frekuensi (f)     : ${freq} Hz`, 15, 65);
+
+            requestAnimationFrame(update);
+        }
+
+        requestAnimationFrame(update);
+    </script>
+</body>
+</html>
